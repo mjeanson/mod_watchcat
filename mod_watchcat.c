@@ -301,6 +301,9 @@ static int wcat_fixer_upper(request_rec *r)
     assert(cfg);
     
     handler = r->content_type;
+    if (handler == NULL)
+        handler = r->handler;
+
     if (cfg->log_handler)
         ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r,
                       "mod_watchcat: handler=`%s' for filename=`%s'",
