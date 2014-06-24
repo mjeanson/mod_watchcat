@@ -1,5 +1,5 @@
 /*
-** $Id: mod_watchcat.c,v 1.16 2004/02/16 11:45:36 michel Exp $
+** $Id$
 ** mod_watchcat - Apache module for watchcat service
 ** See copyright notice in distro's COPYRIGHT file
 */
@@ -247,6 +247,15 @@ static const char *cmd_log_handler(cmd_parms *cmd, void *mconfig)
     return NULL;
 }
 
+static const char *cmd_device(cmd_parms *cmd, void *mconfig, const char *path)
+{
+    struct wcat_dir_cfg *cfg = (struct wcat_dir_cfg *)mconfig;
+    assert(cfg);
+    assert(strlen(path) < CAT_DEVICE_SIZE);
+    cat_set_device(path);
+    return NULL;
+}
+
 #define FD_UUID "4a9426a0-5585-11d8-96e2-000347751b8c"
 
 /*
@@ -301,6 +310,9 @@ static int wcat_fixer_upper(request_rec *r)
     assert(cfg);
     
     handler = r->content_type;
+    if (handler == NULL)
+        handler = r->handler;
+
     if (cfg->log_handler)
         ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r,
                       "mod_watchcat: handler=`%s' for filename=`%s'",
@@ -339,6 +351,7 @@ static int wcat_fixer_upper(request_rec *r)
         return OK;
 
     info = apr_psprintf(r->pool, "%s: %s", info, r->filename);
+
     cat = cat_open1(timeout, SIGKILL, info);
     if (cat >= 0) {
         char *strcat = apr_itoa(r->pool, cat);
@@ -412,6 +425,8 @@ static const command_rec wcat_cmds[] =
                     "Define the match order for the handlers"),
     AP_INIT_NO_ARGS("CatLogHandler", cmd_log_handler, NULL, OR_OPTIONS,
                     "Log the handler of request - no arguments"),
+    AP_INIT_TAKE1("CatDevice", cmd_device, NULL, OR_OPTIONS,
+                  "Define the watchcat device path"),
     {NULL}
 };
 
